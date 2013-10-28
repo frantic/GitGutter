@@ -1,4 +1,5 @@
 import os
+import shutil
 import sublime
 import subprocess
 import encodings
@@ -23,6 +24,8 @@ class GitGutterHandler:
             self.git_tree = git_helper.git_tree(self.view)
             self.git_dir = git_helper.git_dir(self.git_tree)
             self.git_path = git_helper.git_file_path(self.view, self.git_tree)
+            if self.view.get_status('remote'):
+                self.git_path = self.view.get_status('remote')
 
     def _get_view_encoding(self):
         # get encoding and clean it for python ex: "Western (ISO 8859-1)"
@@ -77,6 +80,13 @@ class GitGutterHandler:
         # between updates for performance
         if ViewCollection.git_time(self.view) > 5:
             open(self.git_temp_file.name, 'w').close()
+
+            if self.view.get_status('remote'):
+                base_path = self.view.file_name() + '.base'
+                if os.path.exists(base_path):
+                    shutil.copyfile(base_path, self.git_temp_file.name)
+                return
+
             args = [
                 self.git_binary_path,
                 '--git-dir=' + self.git_dir,
